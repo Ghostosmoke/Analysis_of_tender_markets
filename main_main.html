@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поиск закупок</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .search-box {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        #search-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .procurement-list {
+            margin-top: 20px;
+        }
+        .procurement-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        .procurement-item:hover {
+            background-color: #f9f9f9;
+        }
+        .procurement-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .procurement-customer {
+            color: #3498db;
+            text-decoration: underline;
+        }
+        .procurement-price {
+            float: right;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .procurement-date {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        .details-panel {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+        .details-title {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        .detail-row {
+            margin-bottom: 8px;
+        }
+        .detail-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 150px;
+            color: #7f8c8d;
+        }
+        .related-item {
+            padding: 8px;
+            background-color: #e8f4fc;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Поиск закупок</h1>
+
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="Введите номер закупки, заказчика или исполнителя...">
+            <button onclick="searchProcurements()">Поиск</button>
+        </div>
+
+        <div class="procurement-list" id="procurement-list">
+            <!-- Список закупок будет здесь -->
+        </div>
+
+        <div class="details-panel" id="details-panel">
+            <div class="details-title">Детали закупки</div>
+            <div class="detail-row">
+                <span class="detail-label">Номер:</span>
+                <span id="detail-name"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Тип:</span>
+                <span id="detail-type"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Заказчик:</span>
+                <span id="detail-customer"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Исполнитель:</span>
+                <span id="detail-executor"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Код КТРУ:</span>
+                <span id="detail-ktru"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Цена:</span>
+                <span id="detail-price"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Дата публикации:</span>
+                <span id="detail-date"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Связанные закупки:</span>
+                <div id="detail-related"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Пример данных
+        const procurements = [
+
+<!--            {-->
+<!--                name: '№ 0351300086024000071',-->
+<!--                layer: 'procurement',-->
+<!--                type: 'procurement',-->
+<!--                customer: 'МИНИСТЕРСТВО ЗДРАВООХРАНЕНИЯ ПЕРМСКОГО КРАЯ',-->
+<!--                ktru: ['17.12.14.110-00000003'],-->
+<!--                executor: 'ООО "МЕДТЕХНИКА"',-->
+<!--                price: '12000.0',-->
+<!--                post_date: '2024-07-10',-->
+<!--                related_procurements: [-->
+<!--                    {name: '№ 0356200000124000113', connection_type: 'Связь по одинаковому КТРУ'}-->
+<!--                ]-->
+<!--            },-->
+<!--            {-->
+<!--                name: '№ 0355200000124000055',-->
+<!--                layer: 'procurement',-->
+<!--                type: 'procurement',-->
+<!--                customer: 'АДМИНИСТРАЦИЯ ГОРОДА ПЕРМИ',-->
+<!--                ktru: ['22.11.33.444-00000001'],-->
+<!--                executor: 'ООО "СТРОЙГАРАНТ"',-->
+<!--                price: '250000.0',-->
+<!--                post_date: '2024-06-20',-->
+<!--                related_procurements: []-->
+<!--            },-->
+<!--            {-->
+<!--                name: '№ 0373200001324000414',-->
+<!--                layer: 'procurement',-->
+<!--                type: 'procurement',-->
+<!--                customer: 'ГОСУДАРСТВЕННОЕ БЮДЖЕТНОЕ УЧРЕЖДЕНИЕ ЗДРАВООХРАНЕНИЯ ГОРОДА МОСКВЫ "ГОРОДСКАЯ КЛИНИЧЕСКАЯ БОЛЬНИЦА ИМЕНИ В.В. ВЕРЕСАЕВА ДЕПАРТАМЕНТА ЗДРАВООХРАНЕНИЯ ГОРОДА МОСКВЫ"',-->
+<!--                ktru: ['32.50.13.110-00005143', '32.50.13.110-00005143'],-->
+<!--                executor: 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ "САЛМЕДИКС"',-->
+<!--                price: '992782.3',-->
+<!--                post_date: '2024-01-21',-->
+<!--                related_procurements: [-->
+<!--                    {name: '№ 0355200000124000055', connection_type: 'Связь по методу закупки'},-->
+<!--                    {name: '№ 0320100014824000225', connection_type: 'Связь по методу закупки'}-->
+<!--                ]-->
+<!--            },-->
+<!--            {-->
+<!--                name: '№ 0356500001424001393',-->
+<!--                layer: 'procurement',-->
+<!--                type: 'procurement',-->
+<!--                customer: 'ГОСУДАРСТВЕННОЕ КАЗЕННОЕ УЧРЕЖДЕНИЕ ПЕРМСКОГО КРАЯ "ЦЕНТР ОРГАНИЗАЦИИ ЗАКУПОК"',-->
+<!--                ktru: [],-->
+<!--                executor: '',-->
+<!--                price: '505934.15',-->
+<!--                post_date: '2024-07-19',-->
+<!--                related_procurements: [-->
+<!--                    {name: '№ 0369300044124000006', connection_type: 'Общие поставщики'},-->
+<!--                    {name: '№ 0856500000924000111', connection_type: 'Временная близость'},-->
+<!--                    {name: '№ 0165300010124000107', connection_type: 'Общие поставщики'},-->
+<!--                    {name: '№ 0373200001324001440', connection_type: 'Связь по методу закупки'},-->
+<!--                    {name: '№ 0356500001424001423', connection_type: 'Временная близость'},-->
+<!--                    {name: '№ 0356500001424002799', connection_type: 'Связь по одинаковому КТРУ'}-->
+<!--                ]-->
+<!--            },-->
+<!--            {-->
+<!--                name: '№ 0356500001424001387',-->
+<!--                layer: 'procurement',-->
+<!--                type: 'procurement',-->
+<!--                customer: 'ГОСУДАРСТВЕННОЕ КАЗЕННОЕ УЧРЕЖДЕНИЕ ПЕРМСКОГО КРАЯ "ЦЕНТР ОРГАНИЗАЦИИ ЗАКУПОК"',-->
+<!--                ktru: [],-->
+<!--                executor: 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ МЕДИЦИНСКАЯ КОМПАНИЯ "УРАЛМЕД"',-->
+<!--                price: '888522.21',-->
+<!--                post_date: '2024-01-23',-->
+<!--                related_procurements: [-->
+<!--                    {name: '№ 0369300044124000006', connection_type: 'Временная близость'},-->
+<!--                    {name: '№ 0856500000924000111', connection_type: 'TF-IDF схожесть описаний'}-->
+<!--                ]-->
+<!--            },-->
+<!--            {-->
+<!--            name: '№ 0156200000524000024',-->
+<!--            layer: 'procurement',-->
+<!--            type: 'procurement',-->
+<!--            customer: 'МИНИСТЕРСТВО ЗДРАВООХРАНЕНИЯ ПЕРМСКОГО КРАЯ',-->
+<!--            ktru: [],-->
+<!--            executor: 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ "АРТЕРИЯ МЕД"',-->
+<!--            price: '305417.99',-->
+<!--            post_date: '2024-11-21',-->
+<!--            related_procurements: [-->
+<!--                {name: '№ 1056500006224000027', connection_type: 'Временная близость'},-->
+<!--                {name: '№ 0817200000324000564', connection_type: 'TF-IDF схожесть описаний'},-->
+<!--                {name: '№ 0858300000924000008', connection_type: 'Временная близость'}-->
+<!--            ]-->
+<!--        },-->
+<!--        {-->
+<!--            name: '№ 0356500001424001370',-->
+<!--            layer: 'procurement',-->
+<!--            type: 'procurement',-->
+<!--            customer: 'ГОСУДАРСТВЕННОЕ КАЗЕННОЕ УЧРЕЖДЕНИЕ ПЕРМСКОГО КРАЯ "ЦЕНТР ОРГАНИЗАЦИИ ЗАКУПОК"',-->
+<!--            ktru: ['81.21.10.000-00000006'],-->
+<!--            executor: '',-->
+<!--            price: '115190.56',-->
+<!--            post_date: '2024-12-28',-->
+<!--            related_procurements: [-->
+<!--                {name: '№ 0891200000624010862', connection_type: 'Связь по одинаковому КТРУ'},-->
+<!--                {name: '№ 1056500006624000097', connection_type: 'Связь по одинаковому КТРУ'},-->
+<!--                {name: '№ 0856500000924000108', connection_type: 'Связь по одинаковому КТРУ'}-->
+<!--            ]-->
+<!--        },-->
+<!--        {-->
+<!--            name: '№ 0373100059324000339',-->
+<!--            layer: 'procurement',-->
+<!--            type: 'procurement',-->
+<!--            customer: 'ФЕДЕРАЛЬНОЕ ГОСУДАРСТВЕННОЕ БЮДЖЕТНОЕ УЧРЕЖДЕНИЕ "НАЦИОНАЛЬНЫЙ МЕДИЦИНСКИЙ ИССЛЕДОВАТЕЛЬСКИЙ ЦЕНТР ЭНДОКРИНОЛОГИИ" МИНИСТЕРСТВА ЗДРАВООХРАНЕНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ',-->
+<!--            ktru: ['32.50.13.110-03064', '32.50.13.110-02835', '32.50.13.110-02850', '32.50.13.110-02836', '32.50.13.110-03141', '32.50.13.110-03105', '32.50.13.110-02779', '32.50.13.110-02432', '32.50.13.110-02849', '32.50.13.110-03135'],-->
+<!--            executor: '',-->
+<!--            price: '704946.97',-->
+<!--            post_date: '2024-01-04',-->
+<!--            related_procurements: [-->
+<!--                {name: '№ 0373200022224002318', connection_type: 'TF-IDF схожесть описаний'},-->
+<!--                {name: '№ 0358200052124000069', connection_type: 'TF-IDF схожесть описаний'},-->
+<!--                {name: '№ 0356500001424007574', connection_type: 'Связь по одинаковому КТРУ'},-->
+<!--                {name: '№ 0358200010224000034', connection_type: 'Связь по одинаковому КТРУ'},-->
+<!--                {name: '№ 0356500003824000073', connection_type: 'Связь по одинаковому КТРУ'}-->
+<!--            ]-->
+<!--        },-->
+            {
+                name: '№ 0356200000124000113',
+                layer: 'procurement',
+                type: 'procurement',
+                customer: 'ГОСУДАРСТВЕННОЕ КРАЕВОЕ БЮДЖЕТНОЕ УЧРЕЖДЕНИЕ "УПРАВЛЕНИЕ ПО ЭКСПЛУАТАЦИИ АДМИНИСТРАТИВНЫХ ЗДАНИЙ"',
+                ktru: ['17.12.14.110-00000003'],
+                executor: 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ "ПАРИТЕТ-ПЕРМЬ"',
+                price: '4057.0',
+                post_date: '2024-08-15',
+                related_procurements: [
+                    {qwe:'qwe', name: '№ 0351300086024000071', connection_type: 'Связь по одинаковому КТРУ'}
+                ]
+            },
+                ];
+
+        // Отображение списка закупок
+        function displayProcurements(procList) {
+            const listElement = document.getElementById('procurement-list');
+            listElement.innerHTML = '';
+
+            procList.forEach(proc => {
+                const item = document.createElement('div');
+                item.className = 'procurement-item';
+                item.innerHTML = `
+                    <span class="procurement-name">${proc.name}</span>
+                    <span class="procurement-price">${parseFloat(proc.price).toLocaleString('ru-RU')} ₽</span><br>
+                    <span class="procurement-customer" onclick="showDetails('${proc.name}')">${proc.customer}</span><br>
+                    <span class="procurement-date">${proc.post_date}</span>
+                `;
+                item.onclick = () => showDetails(proc.name);
+                listElement.appendChild(item);
+            });
+        }
+
+        // Поиск закупок
+        function searchProcurements() {
+            const searchText = document.getElementById('search-input').value.toLowerCase();
+
+            if (!searchText) {
+                displayProcurements(procurements);
+                return;
+            }
+
+            const filtered = procurements.filter(proc =>
+                proc.name.toLowerCase().includes(searchText) ||
+                proc.customer.toLowerCase().includes(searchText) ||
+                (proc.executor && proc.executor.toLowerCase().includes(searchText))
+            );
+
+            displayProcurements(filtered);
+        }
+
+        // Показать детали закупки
+        function showDetails(procName) {
+            const proc = procurements.find(p => p.name === procName);
+            if (!proc) return;
+
+            document.getElementById('detail-name').textContent = proc.name;
+            document.getElementById('detail-type').textContent = proc.type;
+            document.getElementById('detail-customer').textContent = proc.customer;
+            document.getElementById('detail-executor').textContent = proc.executor || 'Не указан';
+            document.getElementById('detail-ktru').textContent = proc.ktru && proc.ktru.length > 0 ? proc.ktru.join(', ') : 'Не указаны';
+            document.getElementById('detail-price').textContent = `${parseFloat(proc.price).toLocaleString('ru-RU')} ₽`;
+            document.getElementById('detail-date').textContent = proc.post_date;
+
+            const relatedElement = document.getElementById('detail-related');
+            relatedElement.innerHTML = '';
+
+            if (proc.related_procurements && proc.related_procurements.length > 0) {
+                proc.related_procurements.forEach(rel => {
+                    const relItem = document.createElement('div');
+                    relItem.className = 'related-item';
+                    relItem.innerHTML = `
+                        <span>${rel.qwe} - </span><span>${rel.name}</span> - <span>${rel.connection_type}</span>
+                        <button onclick="showDetails('${rel.name}')" style="float: right; padding: 2px 5px; font-size: 0.8em;">Показать</button>
+                    `;
+                    relatedElement.appendChild(relItem);
+                });
+            } else {
+                relatedElement.textContent = 'Нет связанных закупок';
+            }
+
+            document.getElementById('details-panel').style.display = 'block';
+        }
+
+        // Инициализация - показать все закупки при загрузке
+        window.onload = function() {
+            displayProcurements(procurements);
+        };
+    </script>
+</body>
+</html>
